@@ -49,6 +49,8 @@ public class NaverDAO {
 			pstmt.setString(11, dDto.getGrade());
 			pstmt.setString(12, dDto.getStory());
 			int result = pstmt.executeUpdate();
+			
+			System.out.println("입력결과 "+result);
 		}catch (SQLIntegrityConstraintViolationException e) { // 제약 조건 위배
 			// TODO: handle exception
 			System.out.println("세부정보 이미 수집 끝");
@@ -56,6 +58,7 @@ public class NaverDAO {
 			e.printStackTrace();	
 		}catch (SQLException e) {
 			// TODO Auto-generated catch block
+			System.exit(0);
 			e.printStackTrace();
 
 		} finally {
@@ -147,6 +150,26 @@ public class NaverDAO {
 		} finally {
 			DBManager.close(conn, pstmt);
 		}
+	}
+	public void insertRelease(String mv_code, String regdate) {
+		// TODO Auto-generated method stub
+		try {
+			conn = DBManager.getConnection();
+			String sql = "INSERT INTO releasemv "
+					   + "VALUES(TO_DATE(?,'YYYY-MM-DD HH24:MI:SS'),?) ";
+			pstmt = conn.prepareStatement(sql);
+			
+			pstmt.setString(1,regdate);
+			pstmt.setString(2,mv_code);
+			
+			pstmt.executeUpdate();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+		} finally {
+			DBManager.close(conn, pstmt);
+		}		
 	}
 	
 }

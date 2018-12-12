@@ -19,7 +19,7 @@ public class SiteCrawlingMain {
 	public static void main(String[] args) throws ParseException, IOException, org.json.simple.parser.ParseException {
 
 		BoxOfficeParsing bop = new BoxOfficeParsing();
-		// bop.startParsing();
+		//bop.startParsing();
 		NaverMovie nm = new NaverMovie();
 		nm.startCrawling();
 	}

@@ -18,6 +18,7 @@ import dao.NaverDBDAO;
 import dto.DetailDTO;
 import dto.PeopleDTO;
 import dto.ReviewDTO;
+import javafx.scene.input.KeyCombination.ModifierValue;
 import dto.BestDTO;
  
 
@@ -26,12 +27,12 @@ public  class NaverMovie{
 	String detail_url = null; // 연결할 상세 정보 페이지 url 
 	String page_url = "https://movie.naver.com/movie/sdb/browsing/bmovie.nhn?open=2018&page=";		//페이지 소스(2018년 개봉영화)
 	String base_url = "https://movie.naver.com"; // 영화 정보 및 댓글을 크롤링할 때 기준이 되는 url
-
+	String release_url = "https://movie.naver.com/movie/running/current.nhn";
 	int page = 1; // 영화 리스트 페이지 수
 	int mvTot = 0; // 크롤링한 영화 총 개수
-
-	public void startCrawling(){
-
+	
+	public void startCrawling() throws IOException{
+	//	currentCrawling();
 		while(true) { // 페이지가 끝이 올 때까지 계속 반복문을 돈다!
 			System.out.println(" 페이지 : "+page);
 			Document page_doc;
@@ -67,17 +68,18 @@ public  class NaverMovie{
 	// 영화 상세 정보 크롤링 부분
 
 	public void detailCrawling(Elements mv_link) throws IOException {
-		int i = 0;
+		
 		Calendar day = new GregorianCalendar();
 		day.add(Calendar.DATE, -1); // 오늘날짜로부터 -1
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd"); // 날짜 포맷 
-
 		Loop1: for (Element element : mv_link) {
 
 			
 			detail_url = element.attr("href"); // href 속성을 뽑아옴
 			String movieCd = detail_url.substring(detail_url.indexOf("=")+1); // 영화 코드 추출
-
+			String poster_url = "https://movie.naver.com/movie/bi/mi/photoViewPopup.nhn?movieCode="+movieCd;
+			Document poster_doc = Jsoup.connect(poster_url).get(); // 포스터 링크 접속
+			String poster = poster_doc.select("#targetImage").attr("src");
 			Document detail_doc = Jsoup.connect(base_url+detail_url).get(); // 영화 상세 페이지로 연결
 
 			System.out.println(mvTot+"번째 영화 상세페이지 링크 : "+detail_url);
@@ -87,8 +89,7 @@ public  class NaverMovie{
 			for (Element mv_detail : article) {
 				String kor_tit = mv_detail.select(".mv_info_area > .mv_info > .h_movie > a:first-child").text(); // 영화제목 한국어 버전 뽑기
 				String eng_tit = mv_detail.select(".mv_info_area > .mv_info > .h_movie2").text(); // 영화제목 영어 버전
-				String poster = mv_detail.select(".mv_info_area > .poster img").attr("src"); // 포스터 이미지 링크 
-				String story = mv_detail.select(".story_area > h5,.story_area > .con_tx").text(); // 스토리 파싱 부분 
+				String story = mv_detail.select(".story_area > h5,.story_area > .con_tx").html(); // 스토리 파싱 부분 
 
 				Elements info_spec = mv_detail.select(".mv_info_area .info_spec");
 				
@@ -128,10 +129,7 @@ public  class NaverMovie{
 						Date reDate = sdf.parse(openDt);
 						Calendar oDate = Calendar.getInstance();
 						oDate.setTime(reDate);
-						if(day.compareTo(oDate)<0) { //어제 날짜가 개봉날짜보다 적으면 개봉 x한 영화
-							System.out.println("##############개봉안함###########");
-							continue Loop1; // 다음 영화로 넘어감
-						}	
+			
 						
 					}catch (ParseException e) { //yyyy.MM.dd 형식으로 바꿀 수 없는 것(ex:2018로 날짜가 명확히 정해지지 X)
 							// TODO Auto-generated catch block
@@ -152,32 +150,34 @@ public  class NaverMovie{
 					System.out.println("감독 : "+director);
 					System.out.println("주연 : "+lead_role);
 					System.out.println("관람 등급 : " +grade);
+					
 					//영화 상세정보 저장
-				/*	DetailDTO dDto = new DetailDTO(movieCd, kor_tit, eng_tit, poster, genre, nation, openDt, firstOpen, director, lead_role, grade, story);
+					DetailDTO dDto = new DetailDTO(movieCd, kor_tit, eng_tit, poster, genre, nation, openDt, firstOpen, director, lead_role, grade, story);
 					NaverDAO nDao = new NaverDAO();
+					mvTot++;
 					boolean isexist = nDao.insertDetail(dDto);
+					
 					if(isexist == false) {
 						System.out.println("영화 관련 인물 정보 조사 시작");
 						madePeople(movieCd);
 
 					
-					}*/
+					}
 					
-					DaumMovie dm = new DaumMovie();
-					//dm.searchMoive(kor_tit,firstOpen,movieCd);
+/*					DaumMovie dm = new DaumMovie();
+				dm.searchMoive(kor_tit,firstOpen,movieCd);
 					
 
 
-			//	reviewCrawling(movieCd); //리뷰 댓글 크롤링
+				reviewCrawling(movieCd); //리뷰 댓글 크롤링
 				bestreview(movieCd); // 베스트 댓글 크롤링
-				
 
-				System.out.println("영화코드 : "+movieCd);
+*/				System.out.println("영화코드 : "+movieCd);
 				System.out.println("영화제목 : "+kor_tit);
 				System.out.println("영화제목(영) : "+eng_tit);
 				System.out.println("포스터 링크 : " +poster);
 				System.out.println("영화 스토리 : "+story);	
-				System.out.println("댓글 수집 완료!!!");
+				System.out.println("댓글 수집 완료!!!"+mvTot);
 
 				}
 
@@ -246,7 +246,7 @@ public  class NaverMovie{
 
 		int page = 1; // 평점 댓글 페이지 수
 		int num  = 0;
-		mvTot++;
+		
 		String review_url = "https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code="+mv_code+"&type=after&onlyActualPointYn=N&order=newest"
 				+ "&page="; // 개봉 후 평점 부분 url(관람객만 최신 순으로!)
 
@@ -296,13 +296,13 @@ public  class NaverMovie{
 						System.out.println("댓글입력 날짜 : "+regdate);
 						
 						ReviewDTO rDto = new ReviewDTO(mv_code, rcode, score, content, writer, regdate);
-						//NaverDAO nDao = new NaverDAO();
-						//boolean isExist = nDao.insertReview(rDto); // mongodb에 저장
+						NaverDAO nDao = new NaverDAO();
+						boolean isExist = nDao.insertReview(rDto); // mongodb에 저장
 						
-//						if(isExist == true) {
-//							System.out.println("댓글 이미 존재함 !!! 댓글수집 중단!! 다음 영화로!");
-//							break rstop; //해당 댓글 수집 루프물을 빠져나가라
-//						}
+						if(isExist == true) {
+							System.out.println("댓글 이미 존재함 !!! 댓글수집 중단!! 다음 영화로!");
+							break rstop; //해당 댓글 수집 루프물을 빠져나가라
+						}
 	
 						
 	
@@ -397,6 +397,25 @@ public  class NaverMovie{
 
 		}
 				
+	}
+	public void currentCrawling() throws IOException { //현재 상영 영화 크롤링
+		Document release_doc = Jsoup.connect(release_url).get();
+		Elements mv_link = release_doc.select(".lst_detail_t1 > li > .thumb > a"); // 영화 상세페이지로 가는 링크를 가지고 온다.
+		Date date = new Date();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd"); // 날짜 포맷 
+		String yesterday = sdf.format(date.getTime() - 86400000L);
+
+		String mv_code = "";
+		System.out.println(mv_link.size());
+		int i=0;
+		for (Element element : mv_link) {
+			
+			String href = element.attr("href");
+			mv_code = href.substring(href.indexOf("=")+1);
+			NaverDAO nDao = new NaverDAO();
+			nDao.insertRelease(mv_code, yesterday);
+		}
+	
 	}
 
 }

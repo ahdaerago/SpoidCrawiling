@@ -204,5 +204,19 @@ public class BoxOfficeDTO {
 	public void setYearWeekTime(String yearWeekTime) {
 		this.yearWeekTime = yearWeekTime;
 	}
+
+
+
+
+
+	@Override
+	public String toString() {
+		return "BoxOfficeDTO [showRange=" + showRange + ", targetDt=" + targetDt + ", movieNm=" + movieNm + ", rank="
+				+ rank + ", rankInten=" + rankInten + ", rankOldAndNew=" + rankOldAndNew + ", movieCd=" + movieCd
+				+ ", openDt=" + openDt + ", salesAmt=" + salesAmt + ", salesShare=" + salesShare + ", salesInten="
+				+ salesInten + ", salesChange=" + salesChange + ", salesAcc=" + salesAcc + ", audiCnt=" + audiCnt
+				+ ", audiChange=" + audiChange + ", audiAcc=" + audiAcc + ", yearWeekTime=" + yearWeekTime + "]";
+	}
+	
 	
 }
